@@ -119,17 +119,22 @@
         }
 
         // --- CONFIRM & NEXT STEP ---
-        function confirmLocation() {
-            const googleLink = `https://www.google.com/maps?q=$${sLat},${sLng}`;
-            
-            if (window.parent) {
-                // 1. Typebot Variable එක සෙට් කිරීම
-                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
-                
-                // 2. Typebot එක ඊළඟ පියවරට යැවීම
-                window.parent.postMessage({ type: 'nextStep' }, '*');
-            }
-        }
+       function confirmLocation() {
+    const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+    
+    if (window.parent) {
+        // දත්ත සහ 'submit' පණිවිඩය එකවර යැවීම
+        window.parent.postMessage({ 
+            type: 'setVariable', 
+            name: 'LocationLink', 
+            value: googleLink 
+        }, '*');
+        
+        window.parent.postMessage({ 
+            type: 'submit' 
+        }, '*');
+    }
+}
 
         // Marker එක එහා මෙහා කරන විට ලොකේෂන් එක අප්ඩේට් කිරීම
         marker.on('dragend', () => { sLat = marker.getLatLng().lat; sLng = marker.getLatLng().lng; });
