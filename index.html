@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KNOWLEDGE HUB - Location Selector</title>
+    <title>KNOWLEDGE HUB - Accurate Sri Lanka Map</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #000; }
+        body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; background-color: #000; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* ප්‍රධාන පැනලය (Modal Style) */
+        /* Rapidgo Style UI */
         .ui-container {
             position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
             z-index: 1000; width: 90%; max-width: 380px;
@@ -20,35 +20,37 @@
             display: flex; flex-direction: column; gap: 10px;
         }
 
-        /* සර්ච් කොටස */
         .search-box { position: relative; }
         #search-input {
-            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
+            width: 100%; padding: 14px; border: 1px solid #ddd;
             border-radius: 12px; font-size: 15px; outline: none; box-sizing: border-box;
+            background: #f9f9f9;
         }
+
+        /* Search Results List */
         #results-list {
             position: absolute; bottom: 100%; left: 0; right: 0;
-            background: white; border-radius: 12px; margin-bottom: 5px;
-            max-height: 180px; overflow-y: auto; display: none; padding: 0; list-style: none;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            background: white; border-radius: 12px; margin-bottom: 8px;
+            max-height: 200px; overflow-y: auto; display: none; padding: 0; list-style: none;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15); border: 1px solid #eee;
         }
-        #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
-        #results-list li:hover { background: #f8f8f8; }
+        #results-list li { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
+        #results-list li:hover { background: #fff9e6; }
 
-        /* Confirm බොත්තම (Rapidgo Style) */
+        /* Confirm Button */
         .btn-confirm {
-            background: #ffcc00; color: #000; border: none; padding: 15px;
+            background: #ffcc00; color: #000; border: none; padding: 16px;
             border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
             transition: 0.2s; text-align: center;
         }
-        .btn-confirm:active { transform: scale(0.96); }
+        .btn-confirm:active { transform: scale(0.96); opacity: 0.9; }
 
-        /* Current Location බොත්තම */
+        /* Floating Current Location Button */
         .locate-btn {
-            position: absolute; top: -60px; right: 0;
-            background: white; width: 48px; height: 48px; border-radius: 50%;
+            position: absolute; top: -65px; right: 0;
+            background: white; width: 50px; height: 50px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; border: none;
         }
     </style>
 </head>
@@ -59,12 +61,12 @@
     <div class="ui-container">
         <div class="search-box">
             <ul id="results-list"></ul>
-            <input type="text" id="search-input" placeholder="Enter address" autocomplete="off">
+            <input type="text" id="search-input" placeholder="ශ්‍රී ලංකාවේ ස්ථානය සොයන්න..." autocomplete="off">
         </div>
 
-        <div class="locate-btn" onclick="getCurrentLocation()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
-        </div>
+        <button class="locate-btn" onclick="getCurrentLocation()" title="My Location">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+        </button>
 
         <button class="btn-confirm" onclick="confirmLocation()">Confirm Location</button>
     </div>
@@ -72,27 +74,37 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // ආරම්භක ස්ථානය (Colombo)
+        // ශ්‍රී ලංකාව මැදට මැප් එක සකස් කිරීම
         var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        let sLat = 6.9271; let sLng = 79.8612;
+        let sLat = 6.9271;
+        let sLng = 79.8612;
 
-        // --- Search Suggestions (Autocomplete) ---
+        // --- Accurate Search (Sri Lanka Only) ---
         const sInput = document.getElementById('search-input');
         const rList = document.getElementById('results-list');
 
         sInput.addEventListener('input', function() {
-            if (this.value.length < 3) { rList.style.display = 'none'; return; }
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${this.value}&limit=5`)
-                .then(res => res.json()).then(data => {
+            const query = this.value;
+            if (query.length < 3) { rList.style.display = 'none'; return; }
+
+            // ලංකාව ඇතුළේ පමණක් සෙවීමට 'countrycodes=lk' භාවිතා කර ඇත
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=lk&limit=5&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
                     rList.innerHTML = '';
                     if (data.length > 0) {
                         rList.style.display = 'block';
                         data.forEach(item => {
                             let li = document.createElement('li');
-                            li.innerText = item.display_name;
+                            // වඩාත් පැහැදිලි ලිපිනයක් පෙන්වීම
+                            li.innerText = item.display_name.split(',').slice(0, 3).join(',');
                             li.onclick = function() {
                                 sLat = item.lat; sLng = item.lon;
                                 map.setView([sLat, sLng], 17);
@@ -106,7 +118,7 @@
                 });
         });
 
-        // --- "මම ඉන්න ස්ථානය" ලබා ගැනීම ---
+        // --- My Location Fix ---
         function getCurrentLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -114,31 +126,39 @@
                     sLng = pos.coords.longitude;
                     map.setView([sLat, sLng], 17);
                     marker.setLatLng([sLat, sLng]);
-                }, () => alert("GPS Permission Denied"), { enableHighAccuracy: true });
+                }, (err) => {
+                    alert("කරුණාකර දුරකථනයේ ලොකේෂන් On කර අවසර ලබා දෙන්න.");
+                }, { enableHighAccuracy: true });
             }
         }
 
-        // --- CONFIRM & NEXT STEP ---
-       function confirmLocation() {
-    const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
-    
-    if (window.parent) {
-        // දත්ත සහ 'submit' පණිවිඩය එකවර යැවීම
-        window.parent.postMessage({ 
-            type: 'setVariable', 
-            name: 'LocationLink', 
-            value: googleLink 
-        }, '*');
-        
-        window.parent.postMessage({ 
-            type: 'submit' 
-        }, '*');
-    }
-}
+        // --- Confirm & Force Submit ---
+        function confirmLocation() {
+            // Google Maps Link එක සෑදීම
+            const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+            
+            if (window.parent) {
+                // 1. Variable එක සෙට් කිරීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+                
+                // 2. Typebot එකට 'submit' පණිවිඩය යැවීම
+                window.parent.postMessage({ type: 'submit' }, '*');
+                
+                // 3. ආරක්ෂාවට 'nextStep' පණිවිඩයද යැවීම
+                window.parent.postMessage({ type: 'nextStep' }, '*');
+            }
+        }
 
-        // Marker එක එහා මෙහා කරන විට ලොකේෂන් එක අප්ඩේට් කිරීම
-        marker.on('dragend', () => { sLat = marker.getLatLng().lat; sLng = marker.getLatLng().lng; });
-        map.on('click', e => { marker.setLatLng(e.latlng); sLat = e.latlng.lat; sLng = e.latlng.lng; });
+        // Marker එක එහා මෙහා කරන විට
+        marker.on('dragend', () => { 
+            let pos = marker.getLatLng();
+            sLat = pos.lat; sLng = pos.lng; 
+        });
+
+        map.on('click', e => { 
+            marker.setLatLng(e.latlng);
+            sLat = e.latlng.lat; sLng = e.latlng.lng;
+        });
     </script>
 </body>
 </html>
