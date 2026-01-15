@@ -8,53 +8,58 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* සර්ච් බාර් එකේ පෙනුම */
-        #search-container {
+        /* සර්ච් බාර් සහ බොත්තම් ඇති කොටස */
+        #controls {
             position: absolute;
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
             background: white;
-            padding: 8px;
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             display: flex;
+            flex-direction: column;
+            gap: 8px;
             width: 90%;
             max-width: 400px;
         }
         
+        .search-row { display: flex; gap: 5px; }
+
         #search-input {
             flex: 1;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             outline: none;
-            font-size: 14px;
         }
         
-        #search-button {
-            background: #25d366; /* WhatsApp Green */
-            color: white;
+        .btn {
             border: none;
             padding: 10px 15px;
-            margin-left: 8px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            color: white;
         }
 
-        #search-button:hover { background: #1ebe57; }
+        #search-btn { background: #25d366; } /* WhatsApp Green */
+        #location-btn { background: #007bff; width: 100%; } /* Blue */
     </style>
 </head>
 <body>
 
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="ලිපිනය හෝ නගරය සොයන්න...">
-        <button id="search-button" onclick="searchLocation()">සොයන්න</button>
+    <div id="controls">
+        <div class="search-row">
+            <input type="text" id="search-input" placeholder="ලිපිනය සොයන්න...">
+            <button class="btn" id="search-btn" onclick="searchLocation()">සොයන්න</button>
+        </div>
+        <button class="btn" id="location-btn" onclick="getCurrentLocation()">📍 මගේ වත්මන් ස්ථානය ලබාගන්න</button>
     </div>
 
     <div id="map"></div>
@@ -62,70 +67,70 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // මුලින්ම පෙන්වන ස්ථානය (Colombo)
         var map = L.map('map').setView([6.9271, 79.8612], 13);
 
-        // Map එකේ Tiles load කිරීම
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // සලකුණ (Marker) එකතු කිරීම
-        var marker = L.marker([6.9271, 79.8612], {
-            draggable: true // මෙය ඇදගෙන යාමට (Drag) පුළුවන
-        }).addTo(map);
+        var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        // ලොකේෂන් එක Typebot එකට යවන ප්‍රධාන Function එක
         function sendLocationToBot(lat, lng) {
             var googleMapsLink = "https://www.google.com/maps?q=" + lat + "," + lng;
-            
-            // Typebot Variable එකට දත්ත යැවීම
             if (window.parent) {
                 window.parent.postMessage({
                     type: 'setVariable',
-                    name: 'LocationLink', // ඔබේ Typebot එකේ ඇති Variable නම මෙය විය යුතුය
+                    name: 'LocationLink',
                     value: googleMapsLink
                 }, '*');
             }
         }
 
-        // Marker එක ඇදගෙන ගොස් අතහළ විට
         marker.on('dragend', function (event) {
             var position = marker.getLatLng();
             sendLocationToBot(position.lat, position.lng);
         });
 
-        // Search කිරීමේ function එක
+        // සර්ච් කරන කොටස
         function searchLocation() {
             var query = document.getElementById('search-input').value;
             if (!query) return;
-
             fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + query)
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
                     if (data.length > 0) {
-                        var lat = data[0].lat;
-                        var lon = data[0].lon;
-                        
+                        var lat = data[0].lat, lon = data[0].lon;
                         map.setView([lat, lon], 16);
                         marker.setLatLng([lat, lon]);
                         sendLocationToBot(lat, lon);
-                    } else {
-                        alert("ස්ථානය සොයාගත නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න.");
                     }
-                })
-                .catch(err => console.log('Error:', err));
+                });
         }
 
-        // පාරිභෝගිකයා Map එකේ ඕනෑම තැනක් ක්ලික් කළ විට Marker එක එතැනට යාම
+        // --- මෙන්න අලුතින් එකතු කළ වත්මන් ස්ථානය ලබාගන්නා කොටස ---
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert("ඔබේ බ්‍රවුසරය මෙයට සහය දක්වන්නේ නැත.");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                map.setView([lat, lng], 17);
+                marker.setLatLng([lat, lng]);
+                sendLocationToBot(lat, lng);
+            }, function() {
+                alert("ලොකේෂන් එක ලබා ගැනීමට නොහැකි විය. කරුණාකර Permission ලබා දෙන්න.");
+            }, { enableHighAccuracy: true });
+        }
+        // -------------------------------------------------------
+
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             sendLocationToBot(e.latlng.lat, e.latlng.lng);
         });
 
-        // මුල් ස්ථානය මුලින්ම සේව් කර තැබීම
         sendLocationToBot(6.9271, 79.8612);
-
     </script>
 </body>
 </html>
