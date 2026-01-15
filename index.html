@@ -129,20 +129,20 @@
         }
 
         // --- Confirm & Next Step ---
-        function confirmLocation() {
-            const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
-            
-            if (window.parent) {
-                // Typebot Variable එක සෙට් කිරීම
-                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
-                
-                // Typebot එක ඊළඟ පියවරට ගෙනයාමට 'submit' පණිවිඩය යැවීම
-                window.parent.postMessage({ type: 'submit' }, '*');
-                
-                // අමතර ආරක්ෂාව සඳහා
-                window.parent.postMessage({ type: 'nextStep' }, '*');
-            }
-        }
+       function confirmLocation() {
+    const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+    
+    if (window.parent) {
+        // 1. ලොකේෂන් ලින්ක් එක යවනවා
+        window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+        
+        // 2. තහවුරු කළ බව පැවසීමට තවත් variable එකක් යවනවා
+        window.parent.postMessage({ type: 'setVariable', name: 'IsConfirmed', value: 'YES' }, '*');
+        
+        // 3. ඉදිරියට යන්න කියලා පණිවිඩය යවනවා
+        window.parent.postMessage({ type: 'submit' }, '*');
+    }
+}
 
         marker.on('dragend', () => { 
             let pos = marker.getLatLng();
