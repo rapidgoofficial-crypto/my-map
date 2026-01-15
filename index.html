@@ -3,61 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KNOWLEDGE HUB - Location Fix</title>
+    <title>KNOWLEDGE HUB - Location Selector</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        #controls {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; background: white; padding: 10px; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 85%; max-width: 350px;
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #111; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* ප්‍රධාන පැනලය (Modal look) */
+        .ui-container {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.95); padding: 15px;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 12px;
         }
-        .search-wrapper { position: relative; margin-bottom: 8px; }
+
+        /* සර්ච් බොක්ස් එක */
+        .search-box { position: relative; }
         #search-input {
-            width: 100%; padding: 12px; border: 1px solid #ccc;
-            border-radius: 8px; box-sizing: border-box; font-size: 14px;
+            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
+            border-radius: 12px; font-size: 15px; outline: none; box-sizing: border-box;
         }
         #results-list {
-            position: absolute; top: 45px; left: 0; right: 0;
-            background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-height: 150px; overflow-y: auto; display: none; padding: 0; list-style: none;
+            position: absolute; bottom: 100%; left: 0; right: 0;
+            background: white; border-radius: 12px; margin-bottom: 5px;
+            max-height: 200px; overflow-y: auto; display: none; padding: 0; list-style: none;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
         }
-        #results-list li { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; cursor: pointer; }
-        .btn-group { display: flex; gap: 8px; }
-        .btn {
-            flex: 1; border: none; padding: 12px; border-radius: 8px;
-            cursor: pointer; font-weight: bold; color: white; font-size: 13px;
+        #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; }
+
+        /* බොත්තම් */
+        .btn-confirm {
+            background: #ffcc00; color: #000; border: none; padding: 15px;
+            border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
+            transition: 0.2s; text-align: center;
         }
-        #location-btn { background: #007bff; }
-        #confirm-btn { background: #25d366; }
+        .btn-confirm:active { transform: scale(0.95); }
+
+        /* Current Location Button */
+        .locate-btn {
+            position: absolute; top: -60px; right: 0;
+            background: white; width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <div class="search-wrapper">
-            <input type="text" id="search-input" placeholder="ලිපිනයක් සොයන්න..." autocomplete="off">
-            <ul id="results-list"></ul>
-        </div>
-        <div class="btn-group">
-            <button class="btn" id="location-btn" type="button" onclick="getCurrentLocation()">📍 මම ඉන්න ස්ථානය</button>
-            <button class="btn" id="confirm-btn" type="button" onclick="confirmLocation()">✅ තහවුරු කරන්න</button>
-        </div>
-    </div>
-
     <div id="map"></div>
+
+    <div class="ui-container">
+        <div class="search-box">
+            <ul id="results-list"></ul>
+            <input type="text" id="search-input" placeholder="Enter address">
+        </div>
+
+        <div class="locate-btn" onclick="getCurrentLocation()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+        </div>
+
+        <button class="btn-confirm" onclick="confirmLocation()">Confirm Location</button>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 13);
+        // මැප් එක සකස් කිරීම
+        var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Marker එක මැප් එකේ මැදට ස්ථාවරව තබා ගැනීම (Google Maps වල මෙන්)
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        let sLat = 6.9271; let sLng = 79.8612;
+        let selectedLat = 6.9271;
+        let selectedLng = 79.8612;
 
-        // --- Autocomplete Search ---
+        // සර්ච් පහසුකම
         const sInput = document.getElementById('search-input');
         const rList = document.getElementById('results-list');
 
@@ -72,9 +97,9 @@
                             let li = document.createElement('li');
                             li.innerText = item.display_name;
                             li.onclick = function() {
-                                sLat = item.lat; sLng = item.lon;
-                                map.setView([sLat, sLng], 17);
-                                marker.setLatLng([sLat, sLng]);
+                                selectedLat = item.lat; selectedLng = item.lon;
+                                map.setView([selectedLat, selectedLng], 17);
+                                marker.setLatLng([selectedLat, selectedLng]);
                                 sInput.value = item.display_name;
                                 rList.style.display = 'none';
                             };
@@ -84,54 +109,43 @@
                 });
         });
 
-        // --- "මම ඉන්න ස්ථානය" Fix ---
+        // මගේ ස්ථානය (Current Location)
         function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                alert("ඔබේ දුරකථනය මෙයට සහය දක්වන්නේ නැත.");
-                return;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    selectedLat = pos.coords.latitude;
+                    selectedLng = pos.coords.longitude;
+                    map.setView([selectedLat, selectedLng], 17);
+                    marker.setLatLng([selectedLat, selectedLng]);
+                }, () => alert("Location permission denied."));
             }
-            
-            // Mobile වලදී වැදගත්ම කොටස: High Accuracy සහ Timeout සෙට් කිරීම
-            navigator.geolocation.getCurrentPosition(function(position) {
-                sLat = position.coords.latitude;
-                sLng = position.coords.longitude;
-                map.setView([sLat, sLng], 17);
-                marker.setLatLng([sLat, sLng]);
-            }, function(err) {
-                alert("ලොකේෂන් එක සොයාගත නොහැක. කරුණාකර GPS On කර බ්‍රවුසරයට අවසර දෙන්න.");
-            }, { enableHighAccuracy: true, timeout: 10000 });
         }
 
-        // --- "තහවුරු කරන්න" & Typebot Next Step Fix ---
+        // --- වැදගත්ම කොටස: CONFIRM & NEXT STEP ---
         function confirmLocation() {
-            const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+            const googleLink = `https://www.google.com/maps?q=${selectedLat},${selectedLng}`;
             
-            // Typebot එකට මැසේජ් එක යවන ආකාරය
-            const message = {
-                type: 'setVariable',
-                name: 'LocationLink',
-                value: googleLink
-            };
-
-            // දෙපාරක් උත්සාහ කරන්න (Parent සහ Top window වලට)
             if (window.parent) {
-                window.parent.postMessage(message, "*");
-                window.parent.postMessage({ type: 'nextStep' }, "*");
+                // Typebot Variable එකට දත්ත යැවීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+                
+                // තත්පරයකට පසු මීළඟ පියවරට (Next Step) යැවීම
+                setTimeout(() => {
+                    window.parent.postMessage({ type: 'nextStep' }, '*');
+                }, 300);
             }
-            
-            // ඉබේම යන්නේ නැතිනම් තත්පරයකට පසු නැවත උත්සාහ කරන්න
-            setTimeout(() => {
-                window.parent.postMessage({ type: 'nextStep' }, "*");
-            }, 500);
         }
 
-        map.on('click', e => {
-            sLat = e.latlng.lat; sLng = e.latlng.lng;
-            marker.setLatLng(e.latlng);
+        // Marker එක Drag කරන විට දත්ත යාවත්කාලීන කිරීම
+        marker.on('dragend', function(e) {
+            selectedLat = marker.getLatLng().lat;
+            selectedLng = marker.getLatLng().lng;
         });
-        marker.on('dragend', e => {
-            let pos = marker.getLatLng();
-            sLat = pos.lat; sLng = pos.lng;
+
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            selectedLat = e.latlng.lat;
+            selectedLng = e.latlng.lng;
         });
     </script>
 </body>
