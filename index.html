@@ -3,63 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KNOWLEDGE HUB - Location Picker</title>
+    <title>KNOWLEDGE HUB - Smart Location Picker</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         
-        /* සර්ච් බාර් සහ බොත්තම් ඇති කොටස */
         #controls {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 90%;
-            max-width: 400px;
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: white; padding: 12px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 90%; max-width: 400px;
         }
-        
-        .search-row { display: flex; gap: 5px; }
 
+        /* සර්ච් ලිස්ට් එක හැඩගැන්වීම */
+        .search-wrapper { position: relative; }
         #search-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            outline: none;
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 8px; box-sizing: border-box; font-size: 14px;
         }
-        
-        .btn {
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
+        #results-list {
+            position: absolute; top: 45px; left: 0; right: 0;
+            background: white; border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-height: 200px; overflow-y: auto; display: none; margin: 0; padding: 0; list-style: none;
         }
+        #results-list li {
+            padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px;
+        }
+        #results-list li:hover { background: #f8f8f8; }
 
-        #search-btn { background: #25d366; } /* WhatsApp Green */
-        #location-btn { background: #007bff; width: 100%; } /* Blue */
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn {
+            flex: 1; border: none; padding: 12px; border-radius: 8px;
+            cursor: pointer; font-weight: bold; color: white; transition: 0.3s;
+        }
+        #location-btn { background: #007bff; }
+        #confirm-btn { background: #25d366; }
+        .btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <div id="controls">
-        <div class="search-row">
-            <input type="text" id="search-input" placeholder="ලිපිනය සොයන්න...">
-            <button class="btn" id="search-btn" onclick="searchLocation()">සොයන්න</button>
+        <div class="search-wrapper">
+            <input type="text" id="search-input" placeholder="ලිපිනයක් සොයන්න..." autocomplete="off">
+            <ul id="results-list"></ul>
         </div>
-        <button class="btn" id="location-btn" onclick="getCurrentLocation()">📍 මගේ වත්මන් ස්ථානය ලබාගන්න</button>
+        
+        <div class="btn-group">
+            <button class="btn" id="location-btn" onclick="getCurrentLocation()">📍 මගේ තැන</button>
+            <button class="btn" id="confirm-btn" onclick="confirmLocation()">✅ තහවුරු කරන්න</button>
+        </div>
     </div>
 
     <div id="map"></div>
@@ -68,69 +63,79 @@
 
     <script>
         var map = L.map('map').setView([6.9271, 79.8612], 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        function sendLocationToBot(lat, lng) {
-            var googleMapsLink = "https://www.google.com/maps?q=" + lat + "," + lng;
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: 'setVariable',
-                    name: 'LocationLink',
-                    value: googleMapsLink
-                }, '*');
-            }
-        }
+        let selectedLat = 6.9271;
+        let selectedLng = 79.8612;
 
-        marker.on('dragend', function (event) {
-            var position = marker.getLatLng();
-            sendLocationToBot(position.lat, position.lng);
+        // ස්ථානය වෙනස් වන විට (Marker ඇදගෙන ගියහොත්)
+        marker.on('dragend', function (e) {
+            let pos = marker.getLatLng();
+            selectedLat = pos.lat;
+            selectedLng = pos.lng;
         });
 
-        // සර්ච් කරන කොටස
-        function searchLocation() {
-            var query = document.getElementById('search-input').value;
-            if (!query) return;
-            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + query)
+        // Search Suggestions (Autocomplete)
+        const searchInput = document.getElementById('search-input');
+        const resultsList = document.getElementById('results-list');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value;
+            if (query.length < 3) { resultsList.style.display = 'none'; return; }
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5`)
                 .then(res => res.json())
                 .then(data => {
+                    resultsList.innerHTML = '';
                     if (data.length > 0) {
-                        var lat = data[0].lat, lon = data[0].lon;
-                        map.setView([lat, lon], 16);
-                        marker.setLatLng([lat, lon]);
-                        sendLocationToBot(lat, lon);
+                        resultsList.style.display = 'block';
+                        data.forEach(item => {
+                            let li = document.createElement('li');
+                            li.innerText = item.display_name;
+                            li.onclick = function() {
+                                selectedLat = item.lat;
+                                selectedLng = item.lon;
+                                map.setView([selectedLat, selectedLng], 17);
+                                marker.setLatLng([selectedLat, selectedLng]);
+                                searchInput.value = item.display_name;
+                                resultsList.style.display = 'none';
+                            };
+                            resultsList.appendChild(li);
+                        });
                     }
                 });
-        }
-
-        // --- මෙන්න අලුතින් එකතු කළ වත්මන් ස්ථානය ලබාගන්නා කොටස ---
-        function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                alert("ඔබේ බ්‍රවුසරය මෙයට සහය දක්වන්නේ නැත.");
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var lat = position.coords.latitude;
-                var lng = position.coords.longitude;
-                map.setView([lat, lng], 17);
-                marker.setLatLng([lat, lng]);
-                sendLocationToBot(lat, lng);
-            }, function() {
-                alert("ලොකේෂන් එක ලබා ගැනීමට නොහැකි විය. කරුණාකර Permission ලබා දෙන්න.");
-            }, { enableHighAccuracy: true });
-        }
-        // -------------------------------------------------------
-
-        map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
-            sendLocationToBot(e.latlng.lat, e.latlng.lng);
         });
 
-        sendLocationToBot(6.9271, 79.8612);
+        // මගේ ස්ථානය ලබා ගැනීම
+        function getCurrentLocation() {
+            if (!navigator.geolocation) return alert("සහාය දක්වන්නේ නැත.");
+            navigator.geolocation.getCurrentPosition(pos => {
+                selectedLat = pos.coords.latitude;
+                selectedLng = pos.coords.longitude;
+                map.setView([selectedLat, selectedLng], 17);
+                marker.setLatLng([selectedLat, selectedLng]);
+            });
+        }
+
+        // --- වැදගත්ම කොටස: CONFIRM බොත්තම ---
+        function confirmLocation() {
+            const googleLink = `https://www.google.com/maps?q=${selectedLat},${selectedLng}`;
+            
+            if (window.parent) {
+                // 1. Variable එක සෙට් කිරීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+                
+                // 2. ඊළඟ පියවරට යැවීම
+                window.parent.postMessage({ type: 'nextStep' }, '*');
+            }
+            alert("ස්ථානය තහවුරු විය!");
+        }
+
+        map.on('click', e => {
+            selectedLat = e.latlng.lat; selectedLng = e.latlng.lng;
+            marker.setLatLng(e.latlng);
+        });
     </script>
 </body>
 </html>
