@@ -4,47 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KNOWLEDGE HUB - Location Selector</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #111; }
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #000; }
         #map { height: 100vh; width: 100%; z-index: 1; }
-        
-        /* ප්‍රධාන පැනලය (Modal look) */
         .ui-container {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 90%; max-width: 400px;
-            background: rgba(255, 255, 255, 0.95); padding: 15px;
-            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 12px;
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; max-width: 380px;
+            background: white; padding: 15px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px;
         }
-
-        /* සර්ච් බොක්ස් එක */
-        .search-box { position: relative; }
         #search-input {
-            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
-            border-radius: 12px; font-size: 15px; outline: none; box-sizing: border-box;
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none;
         }
         #results-list {
             position: absolute; bottom: 100%; left: 0; right: 0;
-            background: white; border-radius: 12px; margin-bottom: 5px;
-            max-height: 200px; overflow-y: auto; display: none; padding: 0; list-style: none;
+            background: white; border-radius: 12px; display: none; margin-bottom: 5px;
+            max-height: 150px; overflow-y: auto; padding: 0; list-style: none;
             box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
         }
         #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; }
-
-        /* බොත්තම් */
         .btn-confirm {
-            background: #ffcc00; color: #000; border: none; padding: 15px;
+            background: #ffcc00; color: #000; border: none; padding: 14px;
             border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
-            transition: 0.2s; text-align: center;
         }
-        .btn-confirm:active { transform: scale(0.95); }
-
-        /* Current Location Button */
         .locate-btn {
-            position: absolute; top: -60px; right: 0;
+            position: absolute; top: -55px; right: 0;
             background: white; width: 45px; height: 45px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;
@@ -52,55 +38,44 @@
     </style>
 </head>
 <body>
-
     <div id="map"></div>
-
     <div class="ui-container">
         <div class="search-box">
             <ul id="results-list"></ul>
             <input type="text" id="search-input" placeholder="Enter address">
         </div>
-
         <div class="locate-btn" onclick="getCurrentLocation()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
         </div>
-
         <button class="btn-confirm" onclick="confirmLocation()">Confirm Location</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
-        // මැප් එක සකස් කිරීම
         var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
-        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // Marker එක මැප් එකේ මැදට ස්ථාවරව තබා ගැනීම (Google Maps වල මෙන්)
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        let selectedLat = 6.9271;
-        let selectedLng = 79.8612;
+        let sLat = 6.9271; let sLng = 79.8612;
 
-        // සර්ච් පහසුකම
-        const sInput = document.getElementById('search-input');
+        // Search Autocomplete Logic
+        const sInp = document.getElementById('search-input');
         const rList = document.getElementById('results-list');
-
-        sInput.addEventListener('input', function() {
+        sInp.addEventListener('input', function() {
             if (this.value.length < 3) { rList.style.display = 'none'; return; }
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${this.value}&limit=5`)
-                .then(res => res.json()).then(data => {
+                .then(r => r.json()).then(data => {
                     rList.innerHTML = '';
                     if (data.length > 0) {
                         rList.style.display = 'block';
-                        data.forEach(item => {
+                        data.forEach(d => {
                             let li = document.createElement('li');
-                            li.innerText = item.display_name;
-                            li.onclick = function() {
-                                selectedLat = item.lat; selectedLng = item.lon;
-                                map.setView([selectedLat, selectedLng], 17);
-                                marker.setLatLng([selectedLat, selectedLng]);
-                                sInput.value = item.display_name;
+                            li.innerText = d.display_name;
+                            li.onclick = () => {
+                                sLat = d.lat; sLng = d.lon;
+                                map.setView([sLat, sLng], 17);
+                                marker.setLatLng([sLat, sLng]);
+                                sInp.value = d.display_name;
                                 rList.style.display = 'none';
                             };
                             rList.appendChild(li);
@@ -109,44 +84,28 @@
                 });
         });
 
-        // මගේ ස්ථානය (Current Location)
         function getCurrentLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    selectedLat = pos.coords.latitude;
-                    selectedLng = pos.coords.longitude;
-                    map.setView([selectedLat, selectedLng], 17);
-                    marker.setLatLng([selectedLat, selectedLng]);
-                }, () => alert("Location permission denied."));
+                navigator.geolocation.getCurrentPosition(p => {
+                    sLat = p.coords.latitude; sLng = p.coords.longitude;
+                    map.setView([sLat, sLng], 17);
+                    marker.setLatLng([sLat, sLng]);
+                });
             }
         }
 
-        // --- වැදගත්ම කොටස: CONFIRM & NEXT STEP ---
         function confirmLocation() {
-            const googleLink = `https://www.google.com/maps?q=${selectedLat},${selectedLng}`;
-            
+            const link = `https://www.google.com/maps?q=${sLat},${sLng}`;
             if (window.parent) {
-                // Typebot Variable එකට දත්ත යැවීම
-                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
-                
-                // තත්පරයකට පසු මීළඟ පියවරට (Next Step) යැවීම
-                setTimeout(() => {
-                    window.parent.postMessage({ type: 'nextStep' }, '*');
-                }, 300);
+                // Typebot variable එක සෙට් කිරීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: link }, '*');
+                // Typebot එක ඊළඟ පියවරට යැවීම
+                window.parent.postMessage({ type: 'nextStep' }, '*');
             }
         }
-
-        // Marker එක Drag කරන විට දත්ත යාවත්කාලීන කිරීම
-        marker.on('dragend', function(e) {
-            selectedLat = marker.getLatLng().lat;
-            selectedLng = marker.getLatLng().lng;
-        });
-
-        map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
-            selectedLat = e.latlng.lat;
-            selectedLng = e.latlng.lng;
-        });
+        
+        marker.on('dragend', () => { sLat = marker.getLatLng().lat; sLng = marker.getLatLng().lng; });
+        map.on('click', (e) => { marker.setLatLng(e.latlng); sLat = e.latlng.lat; sLng = e.latlng.lng; });
     </script>
 </body>
 </html>
