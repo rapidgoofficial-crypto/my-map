@@ -2,42 +2,31 @@
 <html lang="si">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KNOWLEDGE HUB - Location Picker</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KNOWLEDGE HUB - Mobile Fix</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica; }
         #map { height: 100vh; width: 100%; z-index: 1; }
-        
         #controls {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; background: white; padding: 12px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 90%; max-width: 400px;
+            z-index: 1000; background: white; padding: 12px; border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2); width: 85%; max-width: 350px;
         }
-
         .search-wrapper { position: relative; }
         #search-input {
-            width: 100%; padding: 12px; border: 1px solid #ddd;
-            border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none;
+            width: 100%; padding: 12px; border: 1px solid #ccc;
+            border-radius: 10px; box-sizing: border-box; font-size: 14px; -webkit-appearance: none;
         }
-
-        /* Suggestions List */
         #results-list {
             position: absolute; top: 48px; left: 0; right: 0;
-            background: white; border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-height: 200px; overflow-y: auto; display: none; margin: 0; padding: 0; list-style: none;
+            background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-height: 180px; overflow-y: auto; display: none; margin: 0; padding: 0; list-style: none;
         }
-        #results-list li {
-            padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; color: #333;
-        }
-        #results-list li:hover { background: #f1f1f1; }
-
-        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; color: #333; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         .btn {
-            flex: 1; border: none; padding: 12px; border-radius: 8px;
+            flex: 1; border: none; padding: 14px; border-radius: 10px;
             cursor: pointer; font-weight: bold; color: white; font-size: 14px;
         }
         #location-btn { background: #007bff; }
@@ -51,7 +40,6 @@
             <input type="text" id="search-input" placeholder="ලිපිනයක් සොයන්න..." autocomplete="off">
             <ul id="results-list"></ul>
         </div>
-        
         <div class="btn-group">
             <button class="btn" id="location-btn" onclick="getCurrentLocation()">📍 මම ඉන්න ස්ථානය</button>
             <button class="btn" id="confirm-btn" onclick="confirmLocation()">✅ තහවුරු කරන්න</button>
@@ -63,29 +51,21 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        var map = L.map('map').setView([6.9271, 79.8612], 13);
+        // ශ්‍රී ලංකාවේ මැද ලොකේෂන් එකකින් ආරම්භය
+        var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
-        let sLat = 6.9271;
-        let sLng = 79.8612;
+        let sLat = 6.9271; let sLng = 79.8612;
 
-        marker.on('dragend', function (e) {
-            let pos = marker.getLatLng();
-            sLat = pos.lat; sLng = pos.lng;
-        });
-
-        // Search Autocomplete
+        // ස්ථානය සෙවීම (Autocomplete)
         const sInput = document.getElementById('search-input');
         const rList = document.getElementById('results-list');
 
         sInput.addEventListener('input', function() {
-            const val = this.value;
-            if (val.length < 3) { rList.style.display = 'none'; return; }
-
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${val}&limit=5`)
-                .then(res => res.json())
-                .then(data => {
+            if (this.value.length < 3) { rList.style.display = 'none'; return; }
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${this.value}&limit=5`)
+                .then(res => res.json()).then(data => {
                     rList.innerHTML = '';
                     if (data.length > 0) {
                         rList.style.display = 'block';
@@ -105,42 +85,43 @@
                 });
         });
 
-        // වත්මන් ස්ථානය ලබා ගැනීම (Current Location)
+        // Current Location (Mobile Fix)
         function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                alert("ඔබේ බ්‍රවුසරය ලොකේෂන් පහසුකමට සහය දක්වන්නේ නැත.");
-                return;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    sLat = position.coords.latitude;
+                    sLng = position.coords.longitude;
+                    map.setView([sLat, sLng], 17);
+                    marker.setLatLng([sLat, sLng]);
+                }, function(error) {
+                    alert("ලොකේෂන් එක ලබා ගැනීමට නොහැකි විය. කරුණාකර Settings හරහා බ්‍රවුසරයට Location අවසර ලබා දෙන්න.");
+                }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
             }
-            
-            // ලොකේෂන් අවසර ඉල්ලීම සහ ලබා ගැනීම
-            navigator.geolocation.getCurrentPosition(function(position) {
-                sLat = position.coords.latitude;
-                sLng = position.coords.longitude;
-                map.setView([sLat, sLng], 17);
-                marker.setLatLng([sLat, sLng]);
-            }, function(error) {
-                alert("ලොකේෂන් එක ලබා ගැනීමට නොහැකි විය. කරුණාකර දුරකථනයේ Location පණගන්වා අවසර (Allow) ලබා දෙන්න.");
-            }, { enableHighAccuracy: true });
         }
 
-        // තහවුරු කර Typebot හි ඊළඟ පියවරට යාම
+        // Confirm & Next Step
         function confirmLocation() {
-            const gLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+            const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
             
             if (window.parent) {
-                // Variable එක සෙට් කිරීම
-                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: gLink }, '*');
+                // 1. Variable එක සෙට් කිරීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
                 
-                // ඊළඟ පියවරට (Next Step) යැවීම
-                setTimeout(() => {
-                    window.parent.postMessage({ type: 'nextStep' }, '*');
-                }, 500);
+                // 2. Next step එකට යන්න කියලා බල කිරීම (Trigger)
+                window.parent.postMessage({ type: 'nextStep' }, '*');
+            } else {
+                alert("Typebot සම්බන්ධතාවය සොයාගත නොහැක.");
             }
         }
 
         map.on('click', e => {
             sLat = e.latlng.lat; sLng = e.latlng.lng;
             marker.setLatLng(e.latlng);
+        });
+
+        marker.on('dragend', e => {
+            let pos = marker.getLatLng();
+            sLat = pos.lat; sLng = pos.lng;
         });
     </script>
 </body>
