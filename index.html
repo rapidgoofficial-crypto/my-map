@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KNOWLEDGE HUB - Location Picker</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* සර්ච් බාර් එකේ පෙනුම */
+        #search-container {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        #search-button {
+            background: #25d366; /* WhatsApp Green */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-left: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #search-button:hover { background: #1ebe57; }
+    </style>
+</head>
+<body>
+
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="ලිපිනය හෝ නගරය සොයන්න...">
+        <button id="search-button" onclick="searchLocation()">සොයන්න</button>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // මුලින්ම පෙන්වන ස්ථානය (Colombo)
+        var map = L.map('map').setView([6.9271, 79.8612], 13);
+
+        // Map එකේ Tiles load කිරීම
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // සලකුණ (Marker) එකතු කිරීම
+        var marker = L.marker([6.9271, 79.8612], {
+            draggable: true // මෙය ඇදගෙන යාමට (Drag) පුළුවන
+        }).addTo(map);
+
+        // ලොකේෂන් එක Typebot එකට යවන ප්‍රධාන Function එක
+        function sendLocationToBot(lat, lng) {
+            var googleMapsLink = "https://www.google.com/maps?q=" + lat + "," + lng;
+            
+            // Typebot Variable එකට දත්ත යැවීම
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'setVariable',
+                    name: 'LocationLink', // ඔබේ Typebot එකේ ඇති Variable නම මෙය විය යුතුය
+                    value: googleMapsLink
+                }, '*');
+            }
+        }
+
+        // Marker එක ඇදගෙන ගොස් අතහළ විට
+        marker.on('dragend', function (event) {
+            var position = marker.getLatLng();
+            sendLocationToBot(position.lat, position.lng);
+        });
+
+        // Search කිරීමේ function එක
+        function searchLocation() {
+            var query = document.getElementById('search-input').value;
+            if (!query) return;
+
+            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + query)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        var lat = data[0].lat;
+                        var lon = data[0].lon;
+                        
+                        map.setView([lat, lon], 16);
+                        marker.setLatLng([lat, lon]);
+                        sendLocationToBot(lat, lon);
+                    } else {
+                        alert("ස්ථානය සොයාගත නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න.");
+                    }
+                })
+                .catch(err => console.log('Error:', err));
+        }
+
+        // පාරිභෝගිකයා Map එකේ ඕනෑම තැනක් ක්ලික් කළ විට Marker එක එතැනට යාම
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            sendLocationToBot(e.latlng.lat, e.latlng.lng);
+        });
+
+        // මුල් ස්ථානය මුලින්ම සේව් කර තැබීම
+        sendLocationToBot(6.9271, 79.8612);
+
+    </script>
+</body>
+</html>
