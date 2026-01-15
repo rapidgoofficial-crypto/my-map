@@ -4,78 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KNOWLEDGE HUB - Location Selector</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; background: #000; }
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #000; }
         #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* ප්‍රධාන පැනලය (Modal Style) */
         .ui-container {
             position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
             z-index: 1000; width: 90%; max-width: 380px;
-            background: white; padding: 15px; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px;
+            background: #fff; padding: 15px;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 10px;
         }
+
+        /* සර්ච් කොටස */
+        .search-box { position: relative; }
         #search-input {
-            width: 100%; padding: 12px; border: 1px solid #ddd;
-            border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none;
+            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
+            border-radius: 12px; font-size: 15px; outline: none; box-sizing: border-box;
         }
         #results-list {
             position: absolute; bottom: 100%; left: 0; right: 0;
-            background: white; border-radius: 12px; display: none; margin-bottom: 5px;
-            max-height: 150px; overflow-y: auto; padding: 0; list-style: none;
+            background: white; border-radius: 12px; margin-bottom: 5px;
+            max-height: 180px; overflow-y: auto; display: none; padding: 0; list-style: none;
             box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
         }
-        #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; }
+        #results-list li { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
+        #results-list li:hover { background: #f8f8f8; }
+
+        /* Confirm බොත්තම (Rapidgo Style) */
         .btn-confirm {
-            background: #ffcc00; color: #000; border: none; padding: 14px;
+            background: #ffcc00; color: #000; border: none; padding: 15px;
             border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
+            transition: 0.2s; text-align: center;
         }
+        .btn-confirm:active { transform: scale(0.96); }
+
+        /* Current Location බොත්තම */
         .locate-btn {
-            position: absolute; top: -55px; right: 0;
-            background: white; width: 45px; height: 45px; border-radius: 50%;
+            position: absolute; top: -60px; right: 0;
+            background: white; width: 48px; height: 48px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer;
         }
     </style>
 </head>
 <body>
+
     <div id="map"></div>
+
     <div class="ui-container">
         <div class="search-box">
             <ul id="results-list"></ul>
-            <input type="text" id="search-input" placeholder="Enter address">
+            <input type="text" id="search-input" placeholder="Enter address" autocomplete="off">
         </div>
+
         <div class="locate-btn" onclick="getCurrentLocation()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
         </div>
+
         <button class="btn-confirm" onclick="confirmLocation()">Confirm Location</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
+        // ආරම්භක ස්ථානය (Colombo)
         var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
 
         let sLat = 6.9271; let sLng = 79.8612;
 
-        // Search Autocomplete Logic
-        const sInp = document.getElementById('search-input');
+        // --- Search Suggestions (Autocomplete) ---
+        const sInput = document.getElementById('search-input');
         const rList = document.getElementById('results-list');
-        sInp.addEventListener('input', function() {
+
+        sInput.addEventListener('input', function() {
             if (this.value.length < 3) { rList.style.display = 'none'; return; }
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${this.value}&limit=5`)
-                .then(r => r.json()).then(data => {
+                .then(res => res.json()).then(data => {
                     rList.innerHTML = '';
                     if (data.length > 0) {
                         rList.style.display = 'block';
-                        data.forEach(d => {
+                        data.forEach(item => {
                             let li = document.createElement('li');
-                            li.innerText = d.display_name;
-                            li.onclick = () => {
-                                sLat = d.lat; sLng = d.lon;
+                            li.innerText = item.display_name;
+                            li.onclick = function() {
+                                sLat = item.lat; sLng = item.lon;
                                 map.setView([sLat, sLng], 17);
                                 marker.setLatLng([sLat, sLng]);
-                                sInp.value = d.display_name;
+                                sInput.value = item.display_name;
                                 rList.style.display = 'none';
                             };
                             rList.appendChild(li);
@@ -84,28 +106,34 @@
                 });
         });
 
+        // --- "මම ඉන්න ස්ථානය" ලබා ගැනීම ---
         function getCurrentLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p => {
-                    sLat = p.coords.latitude; sLng = p.coords.longitude;
+                navigator.geolocation.getCurrentPosition(pos => {
+                    sLat = pos.coords.latitude;
+                    sLng = pos.coords.longitude;
                     map.setView([sLat, sLng], 17);
                     marker.setLatLng([sLat, sLng]);
-                });
+                }, () => alert("GPS Permission Denied"), { enableHighAccuracy: true });
             }
         }
 
+        // --- CONFIRM & NEXT STEP ---
         function confirmLocation() {
-            const link = `https://www.google.com/maps?q=${sLat},${sLng}`;
+            const googleLink = `https://www.google.com/maps?q=$${sLat},${sLng}`;
+            
             if (window.parent) {
-                // Typebot variable එක සෙට් කිරීම
-                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: link }, '*');
-                // Typebot එක ඊළඟ පියවරට යැවීම
+                // 1. Typebot Variable එක සෙට් කිරීම
+                window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+                
+                // 2. Typebot එක ඊළඟ පියවරට යැවීම
                 window.parent.postMessage({ type: 'nextStep' }, '*');
             }
         }
-        
+
+        // Marker එක එහා මෙහා කරන විට ලොකේෂන් එක අප්ඩේට් කිරීම
         marker.on('dragend', () => { sLat = marker.getLatLng().lat; sLng = marker.getLatLng().lng; });
-        map.on('click', (e) => { marker.setLatLng(e.latlng); sLat = e.latlng.lat; sLng = e.latlng.lng; });
+        map.on('click', e => { marker.setLatLng(e.latlng); sLat = e.latlng.lat; sLng = e.latlng.lng; });
     </script>
 </body>
 </html>
