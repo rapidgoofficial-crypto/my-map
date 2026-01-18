@@ -1,158 +1,682 @@
 <!DOCTYPE html>
-<html lang="si">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KNOWLEDGE HUB - Sri Lanka Accurate Map</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        
-        /* Rapidgo UI Style */
-        .ui-container {
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 90%; max-width: 380px;
-            background: #fff; padding: 15px;
-            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .search-box { position: relative; }
-        #search-input {
-            width: 100%; padding: 14px; border: 1px solid #ddd;
-            border-radius: 12px; font-size: 15px; outline: none; box-sizing: border-box;
-            background: #f9f9f9; -webkit-appearance: none;
-        }
-
-        /* Search Results List */
-        #results-list {
-            position: absolute; bottom: 100%; left: 0; right: 0;
-            background: white; border-radius: 12px; margin-bottom: 8px;
-            max-height: 200px; overflow-y: auto; display: none; padding: 0; list-style: none;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.15); border: 1px solid #eee;
-        }
-        #results-list li { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
-        #results-list li:hover { background: #fff9e6; }
-
-        /* Confirm Button */
-        .btn-confirm {
-            background: #ffcc00; color: #000; border: none; padding: 16px;
-            border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
-            transition: 0.2s; text-align: center;
-        }
-        .btn-confirm:active { transform: scale(0.96); opacity: 0.9; }
-
-        /* Current Location Button */
-        .locate-btn {
-            position: absolute; top: -65px; right: 0;
-            background: white; width: 50px; height: 50px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; border: none;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lahiru Madushan | Design & Video Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
 <body>
-
-    <div id="map"></div>
-
-    <div class="ui-container">
-        <div class="search-box">
-            <ul id="results-list"></ul>
-            <input type="text" id="search-input" placeholder="ස්ථානය සොයන්න (Search location)..." autocomplete="off">
-        </div>
-
-        <button class="locate-btn" onclick="getCurrentLocation()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
-        </button>
-
-        <button class="btn-confirm" onclick="confirmLocation()">Confirm Location</button>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-        // ශ්‍රී ලංකාව කේන්ද්‍ර කර මැප් එක සැකසීම
-        var map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        var marker = L.marker([6.9271, 79.8612], { draggable: true }).addTo(map);
-        let sLat = 6.9271;
-        let sLng = 79.8612;
-
-        // --- Accurate Search (Sri Lanka Only) ---
-        const sInput = document.getElementById('search-input');
-        const rList = document.getElementById('results-list');
-
-        sInput.addEventListener('input', function() {
-            if (this.value.length < 3) { rList.style.display = 'none'; return; }
-            
-            // ලංකාව තුළ පමණක් සෙවීම සඳහා countrycodes=lk සහ viewbox භාවිතා කර ඇත
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${this.value}&countrycodes=lk&limit=5&addressdetails=1`)
-                .then(res => res.json())
-                .then(data => {
-                    rList.innerHTML = '';
-                    if (data.length > 0) {
-                        rList.style.display = 'block';
-                        data.forEach(item => {
-                            let li = document.createElement('li');
-                            li.innerText = item.display_name;
-                            li.onclick = function() {
-                                sLat = item.lat; sLng = item.lon;
-                                map.setView([sLat, sLng], 17);
-                                marker.setLatLng([sLat, sLng]);
-                                sInput.value = item.display_name;
-                                rList.style.display = 'none';
-                            };
-                            rList.appendChild(li);
-                        });
-                    }
-                });
-        });
-
-        // --- Current Location Function ---
-        function getCurrentLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    sLat = pos.coords.latitude;
-                    sLng = pos.coords.longitude;
-                    map.setView([sLat, sLng], 17);
-                    marker.setLatLng([sLat, sLng]);
-                }, (err) => {
-                    alert("GPS අවසරය ලබා දී නැත. කරුණාකර බ්‍රවුසරයේ ලොකේෂන් අවසරය ලබා දෙන්න.");
-                }, { enableHighAccuracy: true });
-            } else {
-                alert("ඔබේ බ්‍රවුසරය ලොකේෂන් පහසුකමට සහය දක්වන්නේ නැත.");
-            }
-        }
-
-        // --- Confirm & Next Step ---
-       function confirmLocation() {
-    const googleLink = `https://www.google.com/maps?q=${sLat},${sLng}`;
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
     
-    if (window.parent) {
-        // 1. ලොකේෂන් ලින්ක් එක යවනවා
-        window.parent.postMessage({ type: 'setVariable', name: 'LocationLink', value: googleLink }, '*');
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/94704040300" target="_blank" class="whatsapp-float">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+    
+    <!-- Navigation -->
+    <nav class="glassmorphism">
+        <div class="nav-container">
+            <div class="logo">
+                <h2>Lahiru Madushan</h2>
+            </div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#introduction">Introduction</a>
+                <a href="#about">About</a>
+                <a href="#gallery">Gallery</a>
+                <a href="#services">Services</a>
+                <a href="#portfolio">Portfolio</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#statistics">Statistics</a>
+                <a href="#testimonials">Reviews</a>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Home Section -->
+    <section id="home" class="home-section">
+        <div class="home-content">
+            <!-- Profile Image Container -->
+            <div class="profile-container">
+                <div class="profile-image-wrapper">
+                    <img src="profile.png" alt="Lahiru Madushan" class="profile-image">
+                </div>
+            </div>
+            
+            <div class="hero-text">
+                <h1 class="greeting">Hi, Lahiru Madushan</h1>
+                <h2 class="welcome-title">Welcome To Portfolio</h2>
+                <p class="tagline">Creative Graphic Designer & Video Editor</p>
+            </div>
+            <nav class="hero-nav">
+                <a href="#gallery" class="nav-link">View My Work</a>
+            </nav>
+        </div>
+        <div class="scroll-indicator">
+            <i class="fas fa-chevron-down bounce-arrow"></i>
+        </div>
         
-        // 2. තහවුරු කළ බව පැවසීමට තවත් variable එකක් යවනවා
-        window.parent.postMessage({ type: 'setVariable', name: 'IsConfirmed', value: 'YES' }, '*');
+        <!-- Background Video -->
+        <video class="background-video" autoplay muted loop playsinline>
+            <source src="background-video.mp4" type="video/mp4">
+            <source src="background-video.webm" type="video/webm">
+            Your browser does not support the video tag.
+        </video>
         
-        // 3. ඉදිරියට යන්න කියලා පණිවිඩය යවනවා
-        window.parent.postMessage({ type: 'submit' }, '*');
-    }
-}
+        <!-- Floating Neon Particles -->
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+        
+        <!-- Neon Lines -->
+        <div class="neon-line neon-line-1"></div>
+        <div class="neon-line neon-line-2"></div>
+    </section>
+    
+    <!-- Gallery Section -->
+    <section id="gallery" class="section">
+        <h2 class="section-title">Design <span class="highlight">Gallery</span></h2>
+        <div class="gallery-container">
+            <div class="swiper gallery-slider">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_1.jpg" alt="Design 1" class="background-img">
+                            <img src="Gallery Section/Gallery_1.jpg" alt="Design 1" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_2.jpg" alt="Design 2" class="background-img">
+                            <img src="Gallery Section/Gallery_2.jpg" alt="Design 2" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_3.png" alt="Design 3" class="background-img">
+                            <img src="Gallery Section/Gallery_3.png" alt="Design 3" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_4.jpg" alt="Design 4" class="background-img">
+                            <img src="Gallery Section/Gallery_4.jpg" alt="Design 4" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_5.jpg" alt="Design 5" class="background-img">
+                            <img src="Gallery Section/Gallery_5.jpg" alt="Design 5" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_6.jpg" alt="Design 6" class="background-img">
+                            <img src="Gallery Section/Gallery_6.jpg" alt="Design 6" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_7.png" alt="Design 7" class="background-img">
+                            <img src="Gallery Section/Gallery_7.png" alt="Design 7" class="foreground-img">
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_8.JPG" alt="Design 8" class="background-img">
+                            <img src="Gallery Section/Gallery_8.JPG" alt="Design 8" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_9.JPG" alt="Design 9" class="background-img">
+                            <img src="Gallery Section/Gallery_9.JPG" alt="Design 9" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_10.JPG" alt="Design 10" class="background-img">
+                            <img src="Gallery Section/Gallery_10.JPG" alt="Design 10" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_11.jpg" alt="Design 11" class="background-img">
+                            <img src="Gallery Section/Gallery_11.jpg" alt="Design 11" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_12.JPG" alt="Design 12" class="background-img">
+                            <img src="Gallery Section/Gallery_12.JPG" alt="Design 12" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_13.png" alt="Design 13" class="background-img">
+                            <img src="Gallery Section/Gallery_13.png" alt="Design 13" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_14.jpg" alt="Design 14" class="background-img">
+                            <img src="Gallery Section/Gallery_14.jpg" alt="Design 14" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_15.JPG" alt="Design 15" class="background-img">
+                            <img src="Gallery Section/Gallery_15.JPG" alt="Design 15" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_16.JPG" alt="Design 16" class="background-img">
+                            <img src="Gallery Section/Gallery_16.JPG" alt="Design 16" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_17.JPG" alt="Design 17" class="background-img">
+                            <img src="Gallery Section/Gallery_17.JPG" alt="Design 17" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_18.JPG" alt="Design 18" class="background-img">
+                            <img src="Gallery Section/Gallery_18.JPG" alt="Design 18" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_19.png" alt="Design 19" class="background-img">
+                            <img src="Gallery Section/Gallery_19.png" alt="Design 19" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_20.png" alt="Design 20" class="background-img">
+                            <img src="Gallery Section/Gallery_20.png" alt="Design 20" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_21.jpg" alt="Design 21" class="background-img">
+                            <img src="Gallery Section/Gallery_21.jpg" alt="Design 21" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_22.jpg" alt="Design 22" class="background-img">
+                            <img src="Gallery Section/Gallery_22.jpg" alt="Design 22" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_23.jpg" alt="Design 23" class="background-img">
+                            <img src="Gallery Section/Gallery_23.jpg" alt="Design 23" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_24.png" alt="Design 24" class="background-img">
+                            <img src="Gallery Section/Gallery_24.png" alt="Design 24" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_25.jpg" alt="Design 25" class="background-img">
+                            <img src="Gallery Section/Gallery_25.jpg" alt="Design 25" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_26.jpg" alt="Design 26" class="background-img">
+                            <img src="Gallery Section/Gallery_26.jpg" alt="Design 26" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_27.jpg" alt="Design 27" class="background-img">
+                            <img src="Gallery Section/Gallery_27.jpg" alt="Design 27" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_28.png" alt="Design 28" class="background-img">
+                            <img src="Gallery Section/Gallery_28.png" alt="Design 28" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_29.jpg" alt="Design 29" class="background-img">
+                            <img src="Gallery Section/Gallery_29.jpg" alt="Design 29" class="foreground-img">
+                        </div>
+                    </div>
+                     <div class="swiper-slide">
+                        <div class="image-wrapper">
+                            <img src="Gallery Section/Gallery_30.jpg" alt="Design 30" class="background-img">
+                            <img src="Gallery Section/Gallery_30.jpg" alt="Design 30" class="foreground-img">
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-button-next gallery-next"></div>
+                <div class="swiper-button-prev gallery-prev"></div>
+            </div>
+        </div>
+    </section>
+    
+     <!-- About & Skills Section -->
+    <section id="about" class="section">
+        <h2 class="section-title">About <span class="highlight">Me</span></h2>
+        <div class="about-container">
+            <div class="about-content glassmorphism">
+                <h3>Professional Bio</h3>
+                <p>I am Lahiru Madushan, a Creative Graphic Designer and Video Editor with over 5 years of experience crafting visually compelling content.</p>
+                <p>I specialize in high-quality design and video solutions that help brands stand out, engage audiences, and leave a lasting impression across social media, advertising, and personal projects.</p>
+                
+                <div class="skills">
+                    <h3>Software Skills</h3>
+                    <div class="skills-list">
+                        <div class="skill">
+                            <div class="skill-info">
+                                <span class="skill-name small-icon"><i class="fab fa-adobe"></i> Photoshop</span>
+                                <span class="skill-percent">95%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="skill">
+                            <div class="skill-info">
+                                <span class="skill-name small-icon"><i class="fab fa-adobe"></i> Illustrator</span>
+                                <span class="skill-percent">90%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div class="skill">
+                            <div class="skill-info">
+                                <span class="skill-name small-icon"><i class="fab fa-adobe"></i> Premiere Pro</span>
+                                <span class="skill-percent">70%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        <div class="skill">
+                            <div class="skill-info">
+                                <span class="skill-name small-icon"><i class="fab fa-adobe"></i> After Effects</span>
+                                <span class="skill-percent">40%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Services Section -->
+    <section id="services" class="section">
+        <h2 class="section-title">My <span class="highlight">Services</span></h2>
+        <div class="services-container">
+            <!-- Design Services Category -->
+            <div class="service-category-card" data-category="design">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <div class="category-info">
+                        <h3>Design Services</h3>
+                        <p class="category-description">Creative visual solutions for your brand</p>
+                    </div>
+                    <div class="expand-icon">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <div class="services-grid">
+                    <div class="service-item" data-service="logo">
+                        <div class="service-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Logo Design</h4>
+                            <p>Professional logo creation with modern design principles</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="social-post">
+                        <div class="service-icon">
+                            <i class="fas fa-share-square"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Social Media Post Design</h4>
+                            <p>Eye-catching social media graphics and posts</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="banner">
+                        <div class="service-icon">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Banner Design</h4>
+                            <p>Custom banners for websites and promotions</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="cover-photo">
+                        <div class="service-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Social Media Cover Photo</h4>
+                            <p>Professional cover photos for social platforms</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="book-cover">
+                        <div class="service-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Book Cover Page Design</h4>
+                            <p>Attractive book covers that capture attention</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="package-label">
+                        <div class="service-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Package & Label Design</h4>
+                            <p>Product packaging and label design</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="photo-editing">
+                        <div class="service-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Photo Editing</h4>
+                            <p>Professional photo retouching and enhancement</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="content-editing">
+                        <div class="service-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Social Media Content Editing</h4>
+                            <p>Content creation and editing for social media</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        marker.on('dragend', () => { 
-            let pos = marker.getLatLng();
-            sLat = pos.lat; sLng = pos.lng; 
-        });
-
-        map.on('click', e => { 
-            marker.setLatLng(e.latlng);
-            sLat = e.latlng.lat; sLng = e.latlng.lng;
-        });
-    </script>
+            <!-- Video Editing Category -->
+            <div class="service-category-card" data-category="video">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="category-info">
+                        <h3>Video Editing</h3>
+                        <p class="category-description">Professional video production and editing services</p>
+                    </div>
+                    <div class="expand-icon">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <div class="services-grid">
+                    <div class="service-item" data-service="social-video">
+                        <div class="service-icon">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Social Media Content</h4>
+                            <p>Engaging short-form videos for social platforms</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="viral-content">
+                        <div class="service-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Viral Content</h4>
+                            <p>Trending video content that captures attention</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="ad-short">
+                        <div class="service-icon">
+                            <i class="fas fa-ad"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Advertisement Short</h4>
+                            <p>Compelling short advertisement videos</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="ad-long">
+                        <div class="service-icon">
+                            <i class="fas fa-film"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Advertisement Long</h4>
+                            <p>Detailed long-form advertisement videos</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="wedding">
+                        <div class="service-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Wedding Video</h4>
+                            <p>Cinematic wedding video editing</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="party">
+                        <div class="service-icon">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Party Video</h4>
+                            <p>Fun and energetic party video editing</p>
+                        </div>
+                    </div>
+                    <div class="service-item" data-service="other-video">
+                        <div class="service-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="service-content">
+                            <h4>Other Video Edits</h4>
+                            <p>Custom video editing for any project</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="section">
+        <h2 class="section-title">My <span class="highlight">Portfolio</span></h2>
+        <div class="portfolio-container">
+            <div class="category-grid">
+                <div class="category-card" data-category="logo">
+                    <div class="card-image">
+                        <img src="Gallery Section/Gallery_1.jpg" alt="Logo Design">
+                    </div>
+                    <div class="card-content">
+                        <h3>Logo Design</h3>
+                        <p>Professional logo creation with modern design principles and branding expertise.</p>
+                        <button class="view-all-btn" data-category="logo">View All</button>
+                    </div>
+                </div>
+                <div class="category-card" data-category="social">
+                    <div class="card-image">
+                        <img src="Gallery Section/Gallery_2.jpg" alt="Social Media Posts">
+                    </div>
+                    <div class="card-content">
+                        <h3>Social Media Posts</h3>
+                        <p>Eye-catching social media graphics and posts that engage your audience.</p>
+                        <button class="view-all-btn" data-category="social">View All</button>
+                    </div>
+                </div>
+                <div class="category-card" data-category="banner">
+                    <div class="card-image">
+                        <img src="Gallery Section/Gallery_3.png" alt="Banner Design">
+                    </div>
+                    <div class="card-content">
+                        <h3>Banner Design</h3>
+                        <p>Custom banners for websites and promotions with stunning visuals.</p>
+                        <button class="view-all-btn" data-category="banner">View All</button>
+                    </div>
+                </div>
+                <div class="category-card" data-category="video">
+                    <div class="card-image">
+                        <img src="Gallery Section/Gallery_4.jpg" alt="Video Editing">
+                    </div>
+                    <div class="card-content">
+                        <h3>Video Editing</h3>
+                        <p>Professional video production and editing for all your media needs.</p>
+                        <button class="view-all-btn" data-category="video">View All</button>
+                    </div>
+                </div>
+                <div class="category-card" data-category="photo">
+                    <div class="card-image">
+                        <img src="Gallery Section/Gallery_5.jpg" alt="Photo Editing">
+                    </div>
+                    <div class="card-content">
+                        <h3>Photo Editing</h3>
+                        <p>Expert photo retouching and enhancement services.</p>
+                        <button class="view-all-btn" data-category="photo">View All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Portfolio Modal -->
+    <div class="portfolio-modal-overlay" id="portfolioModal">
+        <div class="portfolio-modal-content">
+            <button class="portfolio-modal-close">&times;</button>
+            <h2 class="modal-category-title"></h2>
+            <div class="modal-gallery-grid">
+                <!-- Images will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pricing Section -->
+    <section id="pricing" class="section">
+        <h2 class="section-title">Pricing <span class="highlight">Plans</span></h2>
+        <div class="pricing-container">
+            <!-- Pricing cards will be dynamically generated by JavaScript -->
+        </div>
+    </section>
+    
+    <!-- Statistics Section -->
+    <section id="statistics" class="section">
+        <h2 class="section-title">Project <span class="highlight">Us</span></h2>
+        <p class="section-subtitle">We are proud of our journey, marked by successful projects and satisfied clients. Here's a snapshot of our achievements and ventures.</p>
+        <div class="stats-container">
+            <div class="stat-card glassmorphism">
+                <div class="stat-number" data-target="250">0</div>
+                <div class="stat-label">Projects Completed</div>
+            </div>
+            <div class="stat-card glassmorphism">
+                <div class="stat-number" data-target="5000">0</div>
+                <div class="stat-label">Happy Customers</div>
+            </div>
+            <div class="stat-card glassmorphism">
+                <div class="stat-number" data-target="250">0</div>
+                <div class="stat-label">Positive Reviews</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="section">
+        <h2 class="section-title">Client <span class="highlight">Reviews</span></h2>
+        <div class="testimonial-container">
+            <div class="marquee">
+                <div class="marquee-content">
+                    <!-- Testimonial cards will be duplicated by JavaScript for infinite scroll -->
+                </div>
+            </div>
+        </div>
+        <div class="counter-container glassmorphism">
+            <div class="counter">
+                <i class="fas fa-project-diagram"></i>
+                <h3>Total Projects Completed</h3>
+                <div class="counter-number" data-target="150">0</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; <span id="currentYear"></span> Lahiru Madushan. All rights reserved.</p>
+            <div class="social-icons">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-behance"></i></a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Order Form Modal -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal-content glassmorphism">
+            <button class="close-modal">&times;</button>
+            <h2>Order Form</h2>
+            <p>Please fill out this form to place your order.</p>
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="customerName">Full Name</label>
+                    <input type="text" id="customerName" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerEmail">Email Address</label>
+                    <input type="email" id="customerEmail" placeholder="Your Email" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerPhone">Phone Number</label>
+                    <input type="tel" id="customerPhone" placeholder="Your Phone Number" required>
+                </div>
+                <div class="form-group">
+                    <label for="packageSelected">Selected Package</label>
+                    <input type="text" id="packageSelected" readonly>
+                </div>
+                <button type="submit" class="btn-submit">Send Message</button>
+            </form>
+            <div class="contact-actions">
+                <a href="https://wa.me/94704040300" target="_blank" class="action-btn whatsapp-btn">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="tel:+94704040300" class="action-btn call-btn">
+                    <i class="fas fa-phone"></i> Call Now
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
