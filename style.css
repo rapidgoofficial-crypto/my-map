@@ -158,7 +158,7 @@
 }
 
 /* --- Mobile View Fix --- */
-@media (max-width: 500px) {
+@media (max-width: 768px) {
     .rapidgo-section {
         max-width: 92vw;
         padding: 2.5rem 1rem;
@@ -584,6 +584,21 @@ nav {
 
 .nav-links a:hover::after {
     width: 100%;
+}
+/* Divider එකේ පෙනුම සහ මැදට ගැනීම */
+.menu-divider {
+    color: rgba(255, 255, 255, 0.2); /* ලා සුදු/අළු පාට */
+    font-size: 1rem;
+    pointer-events: none;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* මෙනු ලින්ක්ස් සහ ඉරි එක කෙළින් තබා ගැනීමට */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* ලින්ක්ස් අතර දුර */
 }
 
 .mobile-menu-btn {
@@ -2126,7 +2141,12 @@ nav {
         font-size: 1.5rem;
     }
 }
-
+/* මෝබයිල් එකේදී ඉරි ඉවත් කිරීම */
+@media screen and (max-width: 768px) {
+    .menu-divider {
+        display: none !important;
+    }
+}
 /* Gallery Section */
 .gallery-container {
     max-width: 1200px;
