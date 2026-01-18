@@ -1,3 +1,52 @@
+// Place Your Order - WhatsApp Integration
+document.addEventListener('DOMContentLoaded', function () {
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+        orderForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('orderName').value.trim();
+            const email = document.getElementById('orderEmail').value.trim();
+            const service = document.getElementById('orderService').value.trim();
+            const details = document.getElementById('orderDetails').value.trim();
+            if (!name || !email || !service || !details) {
+                showOrderMessage('Please fill in all fields.', false);
+                return;
+            }
+            // WhatsApp number (replace with your number)
+            const phoneNumber = '94706004033'; // e.g., 94771234567 (no + or 0)
+            const message = `New Order!%0AName: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0AService: ${encodeURIComponent(service)}%0ADetails: ${encodeURIComponent(details)}`;
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+            showOrderMessage('Order details sent to WhatsApp!', true);
+            orderForm.reset();
+        });
+    }
+
+    function showOrderMessage(msg, success) {
+        let msgDiv = document.getElementById('orderMsg');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'orderMsg';
+            msgDiv.style.marginTop = '1rem';
+            msgDiv.style.fontWeight = 'bold';
+            msgDiv.style.transition = 'opacity 0.3s';
+            orderForm.appendChild(msgDiv);
+        }
+        msgDiv.textContent = msg;
+        msgDiv.style.color = success ? '#f3f315' : '#ff4d4d';
+        msgDiv.style.opacity = '1';
+        setTimeout(() => {
+            msgDiv.style.opacity = '0';
+        }, 3000);
+    }
+});
+// Smooth scroll for RapidGo nav link
+document.querySelectorAll('.rapidgo-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('rapidgo').scrollIntoView({ behavior: 'smooth' });
+    });
+});
 // Custom Cursor with Dual Circle Effect - Optimized
 const cursor = document.querySelector('.cursor');
 const cursorFollower = document.querySelector('.cursor-follower');
@@ -76,6 +125,12 @@ mobileMenuBtn.addEventListener('click', () => {
     navLinks.classList.toggle('active');
     mobileMenuBtn.innerHTML = navLinks.classList.contains('active') ? 
         '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+    // Body scroll lock for mobile menu
+    if (navLinks.classList.contains('active')) {
+        document.body.classList.add('no-scroll');
+    } else {
+        document.body.classList.remove('no-scroll');
+    }
 });
 
 // Close mobile menu when clicking a link
@@ -83,6 +138,7 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', () => {
         navLinks.classList.remove('active');
         mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        document.body.classList.remove('no-scroll');
     });
 });
 
@@ -101,10 +157,10 @@ const categoryImages = {
 // Pricing Data
 const pricingPlans = [
     {
-        title: "Basic",
-        price: "Rs. 2500",
-        features: ["1 Logo Design", "5 Social Media Posts", "Basic Photo Editing"],
-        details: ["Source Files", "2 Revisions", "3 Day Delivery"],
+        title: "Logo Design",
+        price: "Rs. 3000 - Rs. 10000",
+        features: ["Basic Rs. 3000 - Rs. 6000", "Premium Rs. 6000 - Rs. 10000",],
+        details: ["For more details about our packages, please message us on WhatsApp."],
         popular: false
     },
     {
@@ -254,38 +310,55 @@ function initPortfolioModal() {
 }
 
 // Initialize Pricing
+// New Pricing Section Logic (Tabs & Accordion)
 function initPricing() {
-    const pricingContainer = document.querySelector('.pricing-container');
-    
-    // Clear existing cards
-    pricingContainer.innerHTML = '';
-    
-    // Add pricing cards
-    pricingPlans.forEach((plan, index) => {
-        const pricingCard = document.createElement('div');
-        pricingCard.className = `pricing-card glassmorphism ${plan.popular ? 'popular' : ''}`;
-        
-        pricingCard.innerHTML = `
-            ${plan.popular ? '<div class="popular-badge">Most Popular</div>' : ''}
-            <div class="pricing-header">
-                <h3 class="pricing-title">${plan.title}</h3>
-                <div class="pricing-price">${plan.price}</div>
-            </div>
-            <div class="pricing-features">
-                <ul>
-                    ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
-                </ul>
-            </div>
-            <div class="pricing-details" id="details-${index}">
-                <ul>
-                    ${plan.details.map(detail => `<li>${detail}</li>`).join('')}
-                </ul>
-            </div>
-            <button class="btn-choose" data-plan="${plan.title}" data-price="${plan.price}">Choose Plan</button>
-            <button class="toggle-details" data-target="details-${index}">View Details</button>
-        `;
-        
-        pricingContainer.appendChild(pricingCard);
+    // Tab switching
+    const tabs = document.querySelectorAll('.pricing-tab');
+    const accordions = document.querySelectorAll('.pricing-accordion');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            const tabType = this.getAttribute('data-tab');
+            accordions.forEach(acc => {
+                if (acc.classList.contains(`pricing-${tabType}`)) {
+                    acc.classList.add('active');
+                } else {
+                    acc.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Accordion expand/collapse
+    document.querySelectorAll('.accordion-header').forEach(header => {
+        header.addEventListener('click', function(e) {
+            // For sub-accordions, only toggle this one
+            const parent = header.closest('.accordion-item');
+            const isSub = parent.classList.contains('sub');
+            if (!isSub) {
+                // Close others at this level
+                const siblings = parent.parentElement.querySelectorAll('.accordion-item');
+                siblings.forEach(sib => {
+                    if (sib !== parent) {
+                        sib.classList.remove('open');
+                        sib.querySelector('.accordion-header').classList.remove('active');
+                    }
+                });
+            }
+            parent.classList.toggle('open');
+            header.classList.toggle('active');
+        });
+    });
+
+    // Details dropdown for plans
+    document.querySelectorAll('.details-toggle').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const details = btn.parentElement.nextElementSibling;
+            btn.classList.toggle('active');
+            details.classList.toggle('open');
+        });
     });
 }
 
@@ -329,19 +402,7 @@ function initTestimonials() {
 }
 
 // Toggle Pricing Details
-function initPricingToggle() {
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('toggle-details')) {
-            const targetId = e.target.getAttribute('data-target');
-            const detailsElement = document.getElementById(targetId);
-            detailsElement.classList.toggle('expanded');
-            
-            // Update button text
-            e.target.textContent = detailsElement.classList.contains('expanded') ? 
-                'Hide Details' : 'View Details';
-        }
-    });
-}
+// (No longer needed: replaced by new accordion logic)
 
 // Order Form Modal
 function initOrderModal() {
@@ -541,9 +602,9 @@ function initGallerySlider() {
             slideShadows: true,
         },
         
-        // Auto-slide every 3 seconds
+        // Auto-slide every 2 seconds
         autoplay: {
-            delay: 3000,
+            delay: 2000,
             disableOnInteraction: false,
         },
         
@@ -621,22 +682,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initPricing();
     initTestimonials();
     initServices();
-    initPricingToggle();
     initOrderModal();
     initSmoothScroll();
     initPortfolioReveal();
     initPortfolioModal();
-    
-    // Animate counters on scroll
     initCounters();
-    
-    // Initialize Gallery Slider
     initGallerySlider();
-    
     // Animate progress bars on scroll
     const progressBars = document.querySelectorAll('.progress-fill');
     const skillsSection = document.getElementById('about');
-    
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -651,9 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }, { threshold: 0.5 });
-    
     observer.observe(skillsSection);
-    
     // Initialize cursor for non-mobile devices
     if (window.innerWidth > 576) {
         cursor.style.display = 'block';
