@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Test</title>
+</head>
+<body>
+    <h1>Video Test</h1>
+    <h2>Video 1:</h2>
+    <video src="https://drive.google.com/uc?id=1cx_X_8TCXkE76FAoP7-AsyNqU2A4TphI&export=download"
+           controls
+           muted
+           playsinline
+           preload="auto"
+           crossorigin="anonymous"
+           style="width: 400px; height: 600px;"></video>
+
+    <h2>Video 2:</h2>
+    <video src="https://drive.google.com/uc?id=1CLx5msWsdVqCQ25mPFhn6itI3bBLsMyg&export=download"
+           controls
+           muted
+           playsinline
+           preload="auto"
+           crossorigin="anonymous"
+           style="width: 400px; height: 600px;"></video>
+
+    <script>
+        // Add some debugging
+        document.querySelectorAll('video').forEach((video, index) => {
+            video.addEventListener('loadstart', () => console.log(`Video ${index + 1}: loadstart`));
+            video.addEventListener('loadeddata', () => console.log(`Video ${index + 1}: loadeddata`));
+            video.addEventListener('canplay', () => console.log(`Video ${index + 1}: canplay`));
+            video.addEventListener('error', (e) => {
+                console.error(`Video ${index + 1}: error`, e);
+                console.error('Error code:', video.error ? video.error.code : 'Unknown');
+                console.error('Error message:', video.error ? video.error.message : 'Unknown');
+            });
+            video.addEventListener('play', () => console.log(`Video ${index + 1}: play`));
+            video.addEventListener('pause', () => console.log(`Video ${index + 1}: pause`));
+        });
+    </script>
+</body>
+</html>

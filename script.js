@@ -730,3 +730,310 @@ document.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     }
 });
+// 3D Video Showreel - Professional Implementation
+class VideoShowreel {
+    constructor() {
+        console.log('VideoShowreel constructor called');
+        this.currentSlide = 0;
+        this.slides = document.querySelectorAll('.video-3d-slide');
+        this.wrapper = document.querySelector('.video-3d-wrapper');
+        this.autoSwipeInterval = null;
+        this.isAutoSwipeActive = true;
+        this.isUserInteracting = false;
+
+        console.log(`Found ${this.slides.length} video slides`);
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.initializeVideos();
+        this.startAutoSwipe();
+    }
+
+    setupEventListeners() {
+        // Navigation arrows
+        const leftArrow = document.querySelector('.nav-arrow-left');
+        const rightArrow = document.querySelector('.nav-arrow-right');
+
+        if (leftArrow) {
+            leftArrow.addEventListener('click', () => this.previousSlide());
+        }
+
+        if (rightArrow) {
+            rightArrow.addEventListener('click', () => this.nextSlide());
+        }
+
+        // Video and center play button interactions
+        this.slides.forEach((slide, index) => {
+            const video = slide.querySelector('video');
+            const card = slide.querySelector('.video-glass-card');
+            const centerPlayBtn = slide.querySelector('.center-play-btn');
+
+            if (video) {
+                // Video click handler
+                video.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleVideoInteraction(index);
+                });
+
+                // Center play button click handler
+                if (centerPlayBtn) {
+                    centerPlayBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.handleVideoInteraction(index);
+                    });
+                }
+
+                // Video state change handlers
+                video.addEventListener('play', () => {
+                    console.log(`Video ${index} started playing`);
+                    this.handleVideoPlay(index);
+                });
+
+                video.addEventListener('pause', () => {
+                    console.log(`Video ${index} paused`);
+                    this.handleVideoPause(index);
+                });
+
+                video.addEventListener('ended', () => {
+                    console.log(`Video ${index} ended`);
+                    this.handleVideoEnd(index);
+                });
+
+                video.addEventListener('waiting', () => {
+                    console.log(`Video ${index} is buffering`);
+                });
+
+                video.addEventListener('playing', () => {
+                    console.log(`Video ${index} is now playing`);
+                });
+
+                // Prevent auto-swipe when user hovers over video
+                video.addEventListener('mouseenter', () => {
+                    if (this.isAutoSwipeActive) {
+                        this.stopAutoSwipe();
+                    }
+                });
+
+                video.addEventListener('mouseleave', () => {
+                    // Only resume if video is not playing
+                    if (!video.paused && !video.ended) {
+                        // Keep stopped if video is playing
+                        return;
+                    }
+                    this.resumeAutoSwipe();
+                });
+            }
+        });
+
+        // Audio controls
+        const audioControls = document.querySelectorAll('.audio-control');
+        audioControls.forEach((control, index) => {
+            control.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleAudio(index);
+            });
+        });
+    }
+
+    initializeVideos() {
+        // Initialize videos but don't auto-play all at once
+        this.slides.forEach((slide, index) => {
+            const video = slide.querySelector('video');
+            if (video) {
+                video.muted = true; // Ensure muted for auto-play
+                video.preload = 'auto'; // Preload video content
+
+                // Add loading and error event listeners
+                video.addEventListener('loadstart', () => {
+                    console.log(`Video ${index} started loading`);
+                });
+
+                video.addEventListener('loadeddata', () => {
+                    console.log(`Video ${index} loaded successfully`);
+                });
+
+                video.addEventListener('error', (e) => {
+                    console.error(`Video ${index} failed to load:`, e);
+                    console.error('Video error code:', video.error ? video.error.code : 'Unknown');
+                    console.error('Video error message:', video.error ? video.error.message : 'Unknown');
+                    console.error('Video src:', video.src);
+
+                    // Try alternative URL format if direct download fails
+                    if (video.src.includes('uc?export=download&id=')) {
+                        const fileId = video.src.split('id=')[1];
+                        if (fileId) {
+                            console.log(`Trying alternative URL format for video ${index}`);
+                            video.src = `https://drive.google.com/uc?id=${fileId}&export=download`;
+                            video.load(); // Reload with new source
+                        }
+                    }
+                });
+
+                video.addEventListener('canplay', () => {
+                    console.log(`Video ${index} can play`);
+                });
+
+                // Only auto-play the first video initially
+                if (index === 0) {
+                    setTimeout(() => {
+                        video.play().catch(e => {
+                            console.log('Initial auto-play failed for first video:', e);
+                        });
+                    }, 1000); // Small delay to ensure video is ready
+                }
+            }
+        });
+    }
+
+    startAutoSwipe() {
+        if (this.autoSwipeInterval) {
+            clearInterval(this.autoSwipeInterval);
+        }
+
+        this.autoSwipeInterval = setInterval(() => {
+            if (this.isAutoSwipeActive && !this.isUserInteracting) {
+                this.nextSlide();
+            }
+        }, 5000); // 5 seconds
+
+        this.isAutoSwipeActive = true;
+    }
+
+    stopAutoSwipe() {
+        if (this.autoSwipeInterval) {
+            clearInterval(this.autoSwipeInterval);
+            this.autoSwipeInterval = null;
+        }
+        this.isAutoSwipeActive = false;
+    }
+
+    resumeAutoSwipe() {
+        // Check if any video is currently playing
+        const anyVideoPlaying = Array.from(this.slides).some(slide => {
+            const video = slide.querySelector('video');
+            return video && !video.paused && !video.ended;
+        });
+
+        // Only resume if no video is playing and we're not in user interaction mode
+        if (!anyVideoPlaying && !this.isUserInteracting && !this.isAutoSwipeActive) {
+            this.startAutoSwipe();
+        }
+    }
+
+    nextSlide() {
+        this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+        this.updateSlidePosition();
+        this.handleSlideChange();
+    }
+
+    previousSlide() {
+        this.currentSlide = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+        this.updateSlidePosition();
+        this.handleSlideChange();
+    }
+
+    updateSlidePosition() {
+        this.wrapper.style.transform = `translateX(-${this.currentSlide * 100}%)`;
+    }
+
+    handleSlideChange() {
+        // Pause all videos except current slide and handle playback
+        this.slides.forEach((slide, index) => {
+            const video = slide.querySelector('video');
+            const card = slide.querySelector('.video-glass-card');
+
+            if (video) {
+                if (index === this.currentSlide) {
+                    // Play current slide video if auto-swipe is active and no user interaction
+                    if (this.isAutoSwipeActive && !this.isUserInteracting) {
+                        // Small delay to ensure smooth transition
+                        setTimeout(() => {
+                            video.play().catch(e => {
+                                console.log(`Auto-play failed for slide ${index}:`, e);
+                            });
+                        }, 500);
+                    }
+                } else {
+                    // Pause other videos
+                    video.pause();
+                    card.classList.remove('playing');
+                }
+            }
+        });
+    }
+
+    handleVideoInteraction(index) {
+        const video = this.slides[index].querySelector('video');
+        if (video) {
+            console.log(`User interacted with video ${index}, current state: paused=${video.paused}`);
+            this.isUserInteracting = true;
+            this.stopAutoSwipe();
+
+            if (video.paused) {
+                video.play().catch(e => {
+                    console.log('Video play failed:', e);
+                    // Reset user interaction state if play fails
+                    this.isUserInteracting = false;
+                    this.resumeAutoSwipe();
+                });
+            } else {
+                video.pause();
+            }
+        }
+    }
+
+    handleVideoPlay(index) {
+        // Mark as playing and stop auto-swipe
+        this.slides[index].querySelector('.video-glass-card').classList.add('playing');
+        this.isUserInteracting = true;
+        this.stopAutoSwipe();
+    }
+
+    handleVideoPause(index) {
+        // Remove playing class
+        this.slides[index].querySelector('.video-glass-card').classList.remove('playing');
+
+        // Resume auto-swipe after a short delay
+        setTimeout(() => {
+            this.isUserInteracting = false;
+            this.resumeAutoSwipe();
+        }, 1000);
+    }
+
+    handleVideoEnd(index) {
+        // Remove playing class and resume auto-swipe
+        this.slides[index].querySelector('.video-glass-card').classList.remove('playing');
+        this.isUserInteracting = false;
+        this.resumeAutoSwipe();
+    }
+
+    toggleAudio(index) {
+        const slide = this.slides[index];
+        const video = slide.querySelector('video');
+        const control = slide.querySelector('.audio-control');
+        const icon = control.querySelector('i');
+
+        if (video) {
+            video.muted = !video.muted;
+
+            if (video.muted) {
+                icon.className = 'fas fa-volume-mute';
+            } else {
+                icon.className = 'fas fa-volume-up';
+            }
+        }
+    }
+}
+
+// Initialize the video showreel when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing video showreel...');
+    if (document.querySelector('.video-3d-section')) {
+        console.log('Video section found, creating VideoShowreel instance');
+        new VideoShowreel();
+    } else {
+        console.log('Video section not found');
+    }
+});
