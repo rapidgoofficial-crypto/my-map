@@ -147,11 +147,56 @@ document.getElementById('currentYear').textContent = new Date().getFullYear();
 
 // Portfolio Category Images
 const categoryImages = {
-    logo: ['Gallery Section/Gallery_1.jpg', 'Gallery Section/Gallery_6.jpg', 'Gallery Section/Gallery_11.jpg', 'Gallery Section/Gallery_16.JPG', 'Gallery Section/Gallery_21.jpg'],
-    social: ['Gallery Section/Gallery_2.jpg', 'Gallery Section/Gallery_7.png', 'Gallery Section/Gallery_12.JPG', 'Gallery Section/Gallery_17.JPG', 'Gallery Section/Gallery_22.jpg'],
-    banner: ['Gallery Section/Gallery_3.png', 'Gallery Section/Gallery_8.JPG', 'Gallery Section/Gallery_13.png', 'Gallery Section/Gallery_18.JPG', 'Gallery Section/Gallery_23.jpg'],
-    video: ['Gallery Section/Gallery_4.jpg', 'Gallery Section/Gallery_9.JPG', 'Gallery Section/Gallery_14.jpg', 'Gallery Section/Gallery_19.png', 'Gallery Section/Gallery_24.png'],
-    photo: ['Gallery Section/Gallery_5.jpg', 'Gallery Section/Gallery_10.JPG', 'Gallery Section/Gallery_15.JPG', 'Gallery Section/Gallery_20.png', 'Gallery Section/Gallery_25.jpg']
+    logo: [
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769334879/WhatsApp_Image_2026-01-25_at_3.19.45_PM_1_czmnra.jpg', 
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769334879/WhatsApp_Image_2026-01-25_at_3.19.44_PM_z3ykjm.jpg', 
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769334879/WhatsApp_Image_2026-01-25_at_3.19.44_PM_1_oztjul.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769334879/WhatsApp_Image_2026-01-25_at_3.19.45_PM_2_jzbibg.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769359941/ai_guru_logo-01_vlnp5p.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769334879/WhatsApp_Image_2026-01-25_at_3.19.45_PM_ymwoy3.jpg'],
+    social: ['https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342712/Gallery_2_aowl8f.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342713/Gallery_4_ukilnt.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342713/Gallery_1_air71t.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769360368/Screenshot_2026-01-25_222034_ojjbgv.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342714/Gallery_5_mvtfyc.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342718/Gallery_11_kys08c.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342719/Gallery_14_tzpggh.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769360665/ESALA_POYA_DAY_c06phr.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342720/Gallery_16_adfpes.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769359979/0001n_ewxqfd.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342722/Gallery_17_dbs1hg.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769360708/ESALA_POYA_DAY_2_yxd2ei.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342723/Gallery_21_kbheop.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342725/Gallery_22_ibyjru.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342726/Gallery_23_nkiksf.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342730/Gallery_25_oixdou.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342732/Gallery_26_vpuwrj.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342733/Gallery_27_rp3l7o.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342735/Gallery_29_ssptwq.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342736/Gallery_30_ghbdfe.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769359975/0001_fcjzo8.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342729/Gallery_24_kfgn7c.png'],
+    banner: ['https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769347858/Gallery_3_c11659.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769347859/Gallery_28_omsxq0.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769347862/Gallery_18_m3ozjr.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769347858/Gallery_29_zxlah5.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342736/Gallery_30_ghbdfe.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769347857/Gallery_20_joe9mc.png'],
+    video: ['https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769272213/V01_dhkel8.mp4',
+        'https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769272311/V05_lk5hu8.mp4',
+        'https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769272331/V02_bvxhu4.mp4',
+        'https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769272345/V04_hdqytq.mp4',
+        'https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769273501/V03_urhhrh.mp4',
+        'https://res.cloudinary.com/dn0ipzcbb/video/upload/v1769273508/V06_vng51o.mp4'],
+    photo: ['https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769348307/Gallery_13_c8mggt.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769348308/Gallery_8_colce4.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769359463/Inoka_Miss_Photo_Frame_vnzzue.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769348310/Gallery_12_w4are4.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342732/Gallery_26_vpuwrj.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769360874/lakkhana_bd_rudn0n.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769348309/Gallery_9_ay62l8.jpg',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769359935/birthday_qxgwuf.png',
+        'https://res.cloudinary.com/dn0ipzcbb/image/upload/v1769342735/Gallery_29_ssptwq.jpg']
 };
 
 // Pricing Data
@@ -203,10 +248,10 @@ const pricingPlans = [
 // Testimonials Data
 const testimonials = [
     {
-        name: "Ruvini Perera",
-        role: "Marketing Manager",
-        content: "Lahiru designed our company logo and social media posts. The work was professional and exceeded our expectations. Highly recommended!",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+        name: "Vidusha Dilshan",
+        role: "Blogger",
+        content: "Highly Recommended.Fast delivery and friendly service.🔥",
+        avatar: "https://www.facebook.com/photo/?fbid=3081858635377846&set=a.1376545949242465",
         rating: 5
     },
     {
@@ -267,42 +312,64 @@ function initPortfolioModal() {
     const modalGrid = document.querySelector('.modal-gallery-grid');
     const viewAllButtons = document.querySelectorAll('.view-all-btn');
     
-    // Open modal
+    const categoryNames = {
+        logo: 'Logo Design',
+        social: 'Social Media Posts',
+        banner: 'Banner Design',
+        video: 'Video Editing',
+        photo: 'Photo Editing'
+    };
+    
+    // Open modal - Connect all view-all-btn buttons to modal
     viewAllButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            const category = e.target.getAttribute('data-category');
-            const categoryNames = {
-                logo: 'Logo Design',
-                social: 'Social Media Posts',
-                banner: 'Banner Design',
-                video: 'Video Editing',
-                photo: 'Photo Editing'
-            };
+            e.preventDefault();
+            const category = button.getAttribute('data-category');
             
+            // Update modal title
             modalTitle.textContent = categoryNames[category];
+            
+            // Clear previous content
             modalGrid.innerHTML = '';
             
-            categoryImages[category].forEach(image => {
-                const img = document.createElement('img');
-                img.src = image;
-                img.alt = categoryNames[category];
-                modalGrid.appendChild(img);
-            });
+            // Inject images from categoryImages object
+            if (categoryImages[category]) {
+                categoryImages[category].forEach(imagePath => {
+                    const galleryCard = document.createElement('div');
+                    galleryCard.className = 'gallery-card';
+                    
+                    const img = document.createElement('img');
+                    img.src = imagePath;
+                    img.alt = categoryNames[category];
+                    
+                    galleryCard.appendChild(img);
+                    modalGrid.appendChild(galleryCard);
+                });
+            }
             
+            // Open modal with fade-in effect
             modal.classList.add('active');
             document.body.classList.add('no-scroll');
         });
     });
     
-    // Close modal
+    // Close modal via close button
     modalClose.addEventListener('click', () => {
         modal.classList.remove('active');
         document.body.classList.remove('no-scroll');
     });
     
-    // Close modal when clicking outside
+    // Close modal when clicking outside the content area
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
+            modal.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
             modal.classList.remove('active');
             document.body.classList.remove('no-scroll');
         }
